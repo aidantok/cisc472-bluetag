@@ -31,20 +31,35 @@ function searchItems({ q, category, kind }) {
     WHERE items.status != 'removed'
   `;
 
+  // Array of parameters that get applied to SQL query
+  const params = [];
+  
   if (q) {
-    sql += ` AND items.title || ' ' || items.description || ' ' || items.location LIKE '%${q}%'`;
+    sql += ` AND items.title || ' ' || items.description || ' ' || items.location LIKE ?`;
+    
+    // Parameter for search input, applied to query based on position of respective `?` above
+    params.push(`%${q}%`);
   }
 
   if (category && category !== "all") {
-    sql += ` AND items.category = '${category}'`;
+    sql += ` AND items.category = ?`;
+    
+    // Parameter for "category" dropdown, applied to query based on position of respective `?` above
+    params.push(category);
   }
 
   if (kind && kind !== "all") {
-    sql += ` AND items.kind = '${kind}'`;
+    sql += ` AND items.kind = ?`;
+    
+    // Parameter for "kind" dropdown, applied to query based on position of respective `?` above
+    params.push(kind);
   }
 
   sql += " ORDER BY items.created_at DESC LIMIT 50";
-  return db.prepare(sql).all();
+  
+  // Copy of parameters array applied; each parameter applied to query
+  // according to position in array and which `?` characters need to be replaced
+  return db.prepare(sql).all(...params);
 }
 
 router.get("/", (req, res) => {
